@@ -1,0 +1,19 @@
+Abstract (we'll do this last)
+
+Background
+
+Task + Corpus
+
+Baseline
+
+Issues with Baseline
+
+Corpus Cleaning / Datasets
+
+Approach
+
+Results
+
+Observations
+
+Future Work

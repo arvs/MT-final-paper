@@ -1,0 +1,54 @@
+Abstract
+
+Background (Louis)
+
+- overview of literature
+- advantages of SMT over RBMT / vice versa
+
+Task + Corpus (Arvind)
+
+- parameters of shared task
+- statistics about corpus
+
+Baseline (Arvind)
+
+- Talk about M2 Metric, SCLight, Bleu
+	- optimality of combination of M2 + Bleu
+	- multi-reference issue
+- Phrase-based system with default parameters (alignment heuristics, etc)
+
+Issues with Baseline (Louis)
+	- error sparsity, etc (see presentation)
+	- Tuning against Bleu + impact on phrase table
+
+Corpus Cleaning / Datasets (Arvind)
+- topic analysis + clustering for domain sensitivity
+- reducing noise by eliminating references, case sensitivity
+- alternative corpora for language model (Wikipedia)
+
+Approach
+
+- Sig Testing / Downsampling (Louis)
+- Stemming / Lemmatizing (Arvind)
+- NoCorrect (Arvind)
+
+Results (Arvind)
+- basic results table, similar to the one in the presentation
+
+Observations
+- Stemming: precision vs recall (Arvind)
+	- comparison of stemming aggressiveness
+	- forced overcorrection benefits 
+	- alignment decreases in accuracy
+
+- Impacts of Downsampling vs Sig-Testing (Louis)
+- NoCorrect positive indications (arvind)
+	- test on nocorrect vs all
+
+- Lack of domain sensitivity (Arvind)
+	- caveat: closeness of topics in corpus
+
+Future Work (Arvind)
+- pre-editing with rules / syntactic LM
+- expanded error types
+- generating multi-ref
