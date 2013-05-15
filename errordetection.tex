@@ -79,6 +79,14 @@ an error. A fairly typical PT entry indicative of this issue is: \newline
 \indent We note here that the bottom phrase (which makes no changes) has a probability of 
 0.961538, while the top phrase has a probability of 0.0384615. We talk about our approach to this 
 in the section on downsampling. \newline
+\indent Additionally, we run into the problem of the BLEU metric, which causes problems with both 
+tuning and evaluation. In this task, the BLEU metric used by Moses is quite a poor indicator 
+of success. BLEU only checks for particular N-Grams in the reference, and in this task there is only a 
+single reference sentence. This means that BLEU measures only N-grammatic distance to the supplied reference, 
+which makes no guarantee of fluency. That is, a given change might drastically improve a sentence and make an 
+otherwise incorrect sentence mostly or completely correct, but this may not be reflected in the BLEU score if 
+it does not completely line up with the reference sentence. This leads to both strange tuning artifacts (such 
+as the over-tuning described above) and difficult-to-interpret evaluation results. \newline
 \section{Corpus cleaning and Datasets}
 
 \section{Approach}
