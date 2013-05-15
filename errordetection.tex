@@ -60,7 +60,25 @@ of taking into account the relationships between words and/or whole idiomatic ph
 \section{Baseline}
 
 \section{Baseline problems}
-
+\indent The baseline displayed atrocious performance across the board. Two major and easily observable 
+issues arise: the number of useless phrases in the phrase table, and the bias of phrases towards not 
+making changes. \newline
+\indent Firstly, we note that the vast majority of phrases in the phrase table are entirely unhelpful 
+in decoding. For example, the number of possible translations of "(" is obscenely large, having hundreds
+of entries. Of these, only a handful are useful, and even then the most common substitution should still 
+be "(", as no errors using the left paren character occur anyway. This happens for virtually every piece 
+of punctuation and trivial phrase, and does nothing except slow down decoding and cause spurious translation 
+issues during decoding. We deal with a solution to this in the phrase table pruning section. \newline
+\indent A second issue is that the phrase table entries are biased towards not making changes when 
+decoding happens. That is, for a given phrase, the phrase table causes there to be a much larger chance 
+of said phrase remaining unchanged in the final product, rather than changing and potentially correcting 
+an error. A fairly typical PT entry indicative of this issue is: \newline
+\newline
+\indent , according to ||| , according to the ||| 0.166667 0.99065 0.0384615 0.578006 2.718 ||| 0-0 1-1 2-2 ||| 6 26 1 \newline \newline
+\indent , according to ||| , according to ||| 0.961538 0.99065 0.961538 0.986281 2.718 ||| 0-0 1-1 2-2 ||| 26 26 25 \newline \newline
+\indent We note here that the bottom phrase (which makes no changes) has a probability of 
+0.961538, while the top phrase has a probability of 0.0384615. We talk about our approach to this 
+in the section on downsampling. \newline
 \section{Corpus cleaning and Datasets}
 
 \section{Approach}
