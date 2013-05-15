@@ -38,7 +38,25 @@ This paper details our experiments in using Statistical Machine translation meth
 error detection in English as part of the Conll-13 challenge. The challenge involved 
 correction of errors made by Singaporean students of English.
 
-\section{}
+\section{Problem Background: Typoes of error}
+\indent We begin by motivating the approach we take by considering the problem in a little more depth. Two of the most common types of error are article errors and preposition errors. 
+Article errors are most common for speakers of languages which themselves lack any sort of article 
+(some very common examples are Chinese, Japanese, and Russian), though they are naturally present 
+in the writings of most all students. Similarly, preposition errors account for a large number of 
+errors, due to the vast complexity of the English preposition system. Preposition use is highly particular, 
+and is often governed by the context in which the preposition appears (making it a good candidate for 
+phrase based correction). \newline
+
+\indent An additional major source of error is that of collocation (or idiomatic) errors. These 
+arise when there is a strong association between words even though other choices might be semantically 
+or syntactically correct (for example, strong computer makes sense, but powerful computer is idiomatically 
+rendered). Additionally, this type of error encompasses stock idiomatic phrases where the individual words 
+are not obviously related to the actual meaning (to “hit the nail on the head”, to “kick the bucket”, etc). 
+These phrases are usually non-modifiable in many contexts or cannot be modified and retain their meaning 
+unless great care is used. While rule-based approaches lead to extremely complex definitions, a 
+statistical approach is well suited to collocation errors since it provides an easy and concrete way 
+of taking into account the relationships between words and/or whole idiomatic phrases. \newline
+
 
 \section{General Instructions}
 
