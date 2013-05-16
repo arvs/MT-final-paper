@@ -5,6 +5,7 @@
 \documentclass[11pt,letterpaper]{article}
 \usepackage{naaclhlt2012}
 \usepackage{times}
+\usepackage{framed}
 \usepackage{latexsym}
 \setlength\titlebox{6.5cm}    % Expanding the titlebox
 
@@ -138,7 +139,7 @@ Additionally, to experiment on the domain sensitivity of our system, we split th
 
 To experiment with the impact of zero-annotation sentences in the training corpus, we also generated datasets without correct sentences. This left a dataset of 11288 sentences, of which we used 10000 to train and 288 to tune. 
 
-To run stemming experiments, we used the stemmers bundled with NLTK. We stemmed and lemmatized the two corpora mentioned above with the Lancaster and Snowball stemmers and the WordNet lemmatizer to experiment with various degrees of stemming aggressiveness.
+To run stemming experiments, we used the stemmers bundled with NLTK~\cite{nltk}. We stemmed and lemmatized the two corpora mentioned above with the Lancaster and Snowball stemmers and the WordNet lemmatizer to experiment with various degrees of stemming aggressiveness.
 
 We used a Moses (SRILM) ngram language model trained on the test and dev datasets. Given the topic closeness between the test and train sets and the relatively small size of the test set, there was not a significant OOV problem, and experiments with big language models trained on the Brown Corpus did not yield any benefits to either of the scoring metrics.
 
@@ -159,7 +160,20 @@ number of reasons, this is an unwise and unstable way of doing this. Rather, we 
    and redistribute the missing weight over entries that do change. In this manner, we attempt to ameliorate the problems 
    mentioned in the baseline section. \newline
 \subsection{Stemming}
+
+
+One of the issues with longer phrase choice, especially with verb and SVA errors, is that of sparsit. In general, these are context determined errors, so the ideal scenario would have a phrase table with a single source phrase translating to a target phrase, rather than multiple candidates that represent the different error type. 
+
+Take, for example, the phrase "The dog had walked." With a verb or SVA error, this can be formulated as "The dog had walks", "The dog had walk", "The dog had walking," etc. However, there is only one valid annotation. In this case, it makes sense to reduce the word to its base form on the source side, because there will then be 4 training examples rather than one per type. In this trivial example, this also intuitively makes decoding less ambiguous, as reduction to base forms 
+
+Though this could be achieved with segmentation as well (and that could be a different experiment), we decided that stemming was more likely to yield a consistent representation of this theory. We experimented with various levels of stemming aggressiveness (the WordNet lemmatizer on the low end, and the Lancaster stemmer on the high end), using our different training sets to measure the impact.
+
 \subsection{NoCorrect - Only Errors}
+
+The primary issue with the baseline system was the bias towards a correct $\rightarrow$ correct translation in decoding. We tried to address this in various ways, but the naive way to do this was to train a system that dropped all sentences without annotations altogether, essentially forcing the SMT system to learn the annotation types with high probability. A variant of this system would experiment with various "factors" of correctness in the training data, where each 
+
+We ran two experiments on this. The first was to test the performance on this system on a test set that only had sentences with annotations. The second was to test it on the full test set that we used for the other experiments. The former was to establish the hypothesis that decoding performance was dependent on a linear relationship between the number of "errors" in the training sets and the test sets, and the latter was to stay consistent with the methodology of the other experiments. In practice, this method is infeasible - without another model to recognize correctness, there is no way to decode "only sentences with errors" in a blind test, or production setting.
+
 
 \section{Results}
 
@@ -219,20 +233,70 @@ output closer to the reference. Sadly, we still see no very valueable improvemen
 \subsection{Downsampling}
 \indent Downsampling was attempted at values of $\alpha = 0.7, \alpha = 0.9$, as those were the best of the handful of values we tried. 
 The effect was hardly pronounced, and seems to make little difference in BLEU or M2 score. However, more thorough testing 
-might have allowed us to find a more interesting pattern, and is a suitable goal for future work. \newline
+might have allowed us to find a more interesting pattern, and is a suitable goal for future work. \\
+
+In particular, it seems that future work could be  done by optimizing the $\alpha$ parameter, or by transforming the distribution in more interesting ways.
 \subsection{Stemming}
+
+The results from the stemming experiments were a mixed bag, and probably suffered from the fact that it was a broad-stroke approach when a finer brush might have been preferable. Take, for example, the following phrase table entries for the Lancaster experiment:
+
+\begin{framed}
+wait $\|\|$ to wait $\|\|$ 0.333333 1 0.047619 0.00710397 2.718 $\|\|$ 0-1 $\|\|$ 3 21 1 \\
+wait $\|\|$ wait $\|\|$ 1 1 0.428571 0.45 2.718 $\|\|$ 0-0 $\|\|$ 9 21 9 \\
+wait $\|\|$ waiting $\|\|$ 1 1 0.52381 0.55 2.718 $\|\|$ 0-0 $\|\|$ 11 21 11
+\end{framed}
+
+\begin{framed}
+' s fin $\|\|$ 's final $\|\|$ 1 0.25 0.0769231 0.15583 2.718 $\|\|$ 0-0 1-0 2-1 $\|\|$ 1 13 1 \\
+' s fin $\|\|$ 's finances $\|\|$ 1 0.25 0.384615 0.0249327 2.718 $\|\|$ 0-0 1-0 2-1 $\|\|$ 5 13 5 \\
+' s fin $\|\|$ 's financial $\|\|$ 1 0.25 0.538462
+\end{framed}
+
+These two phrase table entries are indicative of a few characteristic trends of the stemming experiments:
+\begin{enumerate}
+  \item The stemming had the intended effect on the verb entries in the phrase table, appropriately recognizing different verb forms with roughly equal probability. The first example shows the rather interesting characteristic that the verb "wait" is rarely corrected to the infinitive form, which, without stemming, would not have been found, as there would have been a single entry with "to wait" $\rightarrow$ "to wait" unless there was a specific annotation that added the infinitive.
+
+  \item The stemming had the opposite effect on nouns and adjectives, introducing ambiguity where there was previously none. In the second example, stemming to "fin" meant that there were three candidates for a single base form, where only one was really valid in the context of another sentence. 
+
+  \item An additional insight was that tokenized punctuation can either be helpful or specifically unhelpful in the context of error correction. In the second example, the \{' s\} serves as potentially useful disambiguation - the following word can only be a noun, adjective, or adverb, since it is a possessive particle. However, parentheses, ellipses, and commas are unhelpful phrase boundaries, and should probably have been dropped altogether. Though we did not consider the punctuation error type for the initial tests, we anticipate that this would have been problematic had we done so.
+  
+\end{enumerate}
+
+Some of the additional noise introduced with stemming was fixed by being less aggressive (specifically the noise characteristic of the latter example), and in our tests, the WordNet lemmatizer performed best. In future tests (see sec. 10), we want to isolate error types in decoding sets to solidify the claim that stemming specifically increases recall and precision on Verb form and SVA errors, and does not help in the other cases - the alternative is that stemming merely introduces ambiguity in the same way downsampling does, and so it achieved slight gains just due to overcorrection.
+
 \subsection{NoCorrect - Only Errors}
 
+Though not included in the above table, the test of our NoCorrect system only decoding sentences with errors had the most encouraging results, as shown below:
 
-\section{Future work}
-% Add what you were going to add, I just wanted to put one more thing here
-\indent Additionally, this look at the downsampling model was not comprehensive and not extremely conclusive - it raised performance in
- one case, but the actual effect is hard to measure and interpret. In particular, it seems that future work could be
-  done by optimizing the $\alpha$ parameter, or by transforming the distribution in more interesting ways. \newline
+\begin{framed}
+BLEU = 88.26, 95.8/90.8/86.0/81.6 \\
+$M^2$ Precision: 0.4697 \\
+$M^2$ Recall   : 0.1951 \\
+$M^2$ F1       : 0.2757 \\
+\end{framed}
+
+What this tells us is that at least for these 5 error forms, training a system on just errors is the best approach - it intuitively overcorrects in the same way that stemming or downsampling does artificially. The challenge then becomes twofold:
+\begin{enumerate}
+  \item Increase the size of the training set significantly - after dropping incorrect sentences and noise, the training set was only 10000 sentences.
+  \item Drop sentences that are probably correct before decoding -- as the results show, the performance significantly drops with the full training set.
+\end{enumerate}
+
+Additionally, it remains to be seen how this approach generalizes to the other error types. The five error types that we dealt with are largely single word corrections, so the SMT system was at least able to learn the most common word substitutions. For longer error types, like fragments, runons, redundancy, and incorrect sentence form, the NoCorrect system would probably have much more damaging overcorrection issues.
+
+\section{Conclusions}
+
+Our results did not do much to validate SMT as a robust approach for error correction, as our experiments more or less failed across the board. Although these were only preliminary experiments, there were a few error types that seemed to have systemic issues when addressed in an SMT framework, and a few of the experiments (NoCorrect and Significance Testing in particular) were entirely designed to mitigate some of those systemic issues rather than introduce any particular linguistic nuance to the correction task. That said, part of this was self inflicted - the errors that we focused on for the shared task were those that may have been best served by a parse-tree rule based approach. The SMT approach, on the other hand, would have been able to find results for error types that we did not address due to sparsity of annotation, but are not tractable in a rule framework, like fragment correction or idiomatic consistency. We also avoided some tricky reordering issues that may have resulted from error types like redundancy, or anything that depended on related clauses. 
+
+That said, there is a significant body of SMT research that introduces syntactic information into the translation task, and SMT is clearly an important approach to pursue for error correction, even only because rules are highly language dependent, suffer significantly in the presence of noise, and do not account for the inherent ambiguity in the error correction task. We hope that our research guides other researchers to more interesting conclusions in the future.
+
+\section{Future Work}
+
+\section*{Acknowledgments}
+
+We especially want to thank Professors Habash and Tomeh for their guidance and patience during this project. We both learned a lot, and are excited to continue investigating approaches to SMT and error correction in the future.
 
 
 \begin{thebibliography}{}
-
 
 \bibitem[\protect\citename{Johnson et. al}2007]
 H. Johnson, J. Martin, G. Foster and R. Kuhn.
