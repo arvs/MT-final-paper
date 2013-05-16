@@ -144,9 +144,19 @@ We used a Moses (SRILM) ngram language model trained on the test and dev dataset
 \section{Approach}
 \subsection{Significance Testing}
 \indent We noted above that the Baseline model's phrase table contained a large number of "junk" entries.
-One of our first challenges was eliminating such entries. \newline
+One of our first challenges was eliminating such entries. A naive way of doing this is to choose a parameter; then, for all 
+phrase tables with probability lower than this parameter, drop the phrase and redistribute its weight. For a 
+number of reasons, this is an unwise and unstable way of doing this. Rather, we chose to use the method
+ proposed by Johnson et. al (Johnson 2007), which uses tests of statistical significance to prune the phrase table. 
+ Ideally, this would remove statistically significant entries (such as the aforementioned left-paren nuisances). \newline
 \subsection{Downsampling}
-\indent \newline
+\indent We also noted above that there is a significan skew towards not changing particular phrases in the table. One way of
+ dealing with this is by preprocessing out the sentences which are already correct and don't change, as mentioned in this paper. 
+ An additional way of dealing with this is by readjusting the distribution of phrases in the phrase table. Here, we choose to
+  do this via a variable input parameter (which we'll denote $\alpha$, where $\alpha \in [0,1]$). For each phrase in
+   a distribution over possible word translations, we multiply the probability  of an entry that does not change by $\alpha$ 
+   and redistribute the missing weight over entries that do change. In this manner, we attempt to ameliorate the problems 
+   mentioned in the baseline section. \newline
 \subsection{Stemming}
 \subsection{NoCorrect - Only Errors}
 
