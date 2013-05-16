@@ -74,7 +74,7 @@ The corpus itself is comprised of ~1400 annotated essays written by english-seco
 
 For the initial approach to this task, however, we looked to train a system that would identify a set of five errors: SVA, ArtOrDet, Nn, VForm, and Prep. The total corpus amounted to 67372 sentences, of which ~15,000 were noisy (references, urls, etc). Of that, 11288 sentences had annotations with those tags, leaving a fairly small dataset on which to train. After the time of this writing, ConLL has released an additional dataset - the blind test data with the gold references, so we anticipate that this dataset will grow significantly.
 
-\section{Problem Background: SMT motivation}
+\section{Problem Background: SMT motivation and literature}
 \indent We begin by motivating the approach we take by considering the problem in a little more depth. Two of the 
 most common types of error are article errors and preposition errors. 
 Article errors are most common for speakers of languages which themselves lack any sort of article 
@@ -93,6 +93,44 @@ These phrases are usually non-modifiable in many contexts or cannot be modified 
 unless great care is used. While rule-based approaches lead to extremely complex definitions, a 
 statistical approach is well suited to collocation errors since it provides an easy and concrete way 
 of taking into account the relationships between words and/or whole idiomatic phrases. \newline
+
+\indent The SMT approach to error detection is relatively new. The first major result was reported by Brockett et. al, 
+and was a significant departure from the rule-based models of the time. This new perspective was 
+motivated by a number of different advantages that a SMT approach would have over a rule-based one. 
+For example, many of the rule-based approaches of the time involved individual classifiers detecting
+a single-word error in a particular context. This is problematic and rather unrealistic when considering
+the mistakes that actual English Students make. Usually, in such cases an error will involve multiple words 
+in a complex context; thus correcting a single word leads to a failure to appreciate interdependencies between 
+errors, and often involves reacting to a context which itself contains errors. Beyond this sort of error 
+relationship, ESL speakers and writers might make idiosyncratic mistakes related to false assumptions of 
+similarity to their native language - as a result, one group of students might make a particular 
+set of mistakes regularly while another makes a separate one, introducing a large amount of complexity 
+to the rules needed to classify such errors. \newline
+
+\indent To these ends, the SMT approach (particularly, the Phrase-based one first 
+used by Brockett and continued in the other papers and systems surveyed) presents 
+a handy way of treating these sorts of problems. Intuitively, a model mapping phrases to 
+phrases allows a model to take into the account of both the error and the idiomatically correct 
+phrase. In addition, it allows the capturing of statistical information pertaining to the kinds 
+of errors that learners with a particular native language tend to make. A favorite example in the 
+literature is that of mass noun errors - a common appearance in the writing samples of ESL students 
+with native east asian languages. Consider, for example, the short sentence “I received many informations 
+during my trip.”  A single-word correction system might correct “many” to “much” and “informations” to 
+“information”, but the sentence remains idiomatically awkward. A more correct rendering would involve 
+hanging the verb “received” and might look something like “I learned a lot during my trip”. Intuitively, 
+we can see that this could be arrived at by matching “received many informations” and “learned a lot”, 
+rather than attempting to remove errors word by word and ignoring context. \newline
+
+\indent A similar approach and an extension to the model introduced by Brockett is introduced by Park and Levy. 
+In particular, while a Noisy channel model is used, and the authors also include a method of dealing with particular 
+types of errors via the a noise model implemented as a weighted Finite State Transducer (as opposed 
+to a generalized error-correction translation model as Brockett does). The parameters of this noise model 
+are learned in training and used in conjunction with a language model to decode by maximizing the combined 
+likelihood of the noise and language models. A major advantage of this approach is that the language model 
+used to learn the noise model obviates the need for parallel data; however, this leads to a significant 
+amount of dependence being placed on the correctness of the language model - for example, the authors note 
+that in their output using a bigram model, a very large number of the errors observed were the result of 
+ignoring non-bigrammatic context. \newline
 
 \section{Baseline}
 Our baseline system used Moses to "translate" between a test corpus of original essays and the counterpart essays with all the annotations applied. This "flattened" corpus was split into ~58000 training sentences, ~2000 sentences for tuning, and ~8000 test sentences. 
@@ -149,7 +187,7 @@ We used a Moses (SRILM) ngram language model trained on the test and dev dataset
 One of our first challenges was eliminating such entries. A naive way of doing this is to choose a parameter; then, for all 
 phrase tables with probability lower than this parameter, drop the phrase and redistribute its weight. For a 
 number of reasons, this is an unwise and unstable way of doing this. Rather, we chose to use the method
- proposed by Johnson et. al (Johnson 2007), which uses tests of statistical significance to prune the phrase table. 
+ proposed by Johnson et. al (Johnson et al 2007), which uses tests of statistical significance to prune the phrase table. 
  Ideally, this would remove statistically significant entries (such as the aforementioned left-paren nuisances). \newline
 \subsection{Downsampling}
 \indent We also noted above that there is a significan skew towards not changing particular phrases in the table. One way of
@@ -319,7 +357,7 @@ We especially want to thank Professors Habash and Tomeh for their guidance and p
 \bibitem[\protect\citename{{Johnson et. al}}2007]{CONLL}
 {H. Johnson, J. Martin, G. Foster and R. Kuhn}.
 \newblock 2007.
-\newblock {\em In Proceedings of the 2007 Joint Conference on Empirical Methods in Natural Language Processing and Computational Natural Language Learning (EMNLP-CoNLL), pp. 967-975}.
+\newblock {\em Improving Translation by Discarding Most of the phrase table. In Proceedings of the 2007 Joint Conference on Empirical Methods in Natural Language Processing and Computational Natural Language Learning (EMNLP-CoNLL), pp. 967-975}.
 
 \bibitem[\protect\citename{{Dahlmeier and Ng}}2012]{M2}
 {Daniel Dahlmeier and Hwee Tou Ng}.
@@ -340,6 +378,17 @@ We especially want to thank Professors Habash and Tomeh for their guidance and p
 {Tan, Ming and Zhou, Wenli and Zheng, Lei and Wang, Shaojun}.
 \newblock 2012.
 \newblock {\em A scalable distributed syntactic, semantic, and lexical language model. Computational Linguistics v38, 3, pp 631-671. MIT Press}.
+
+\bibitem[\protect\citename{{Brockett et. al}}2006]{}
+{ C. Brockett, W. B. Dolan, and M. Gamon}.
+\newblock 2006.
+\newblock {\em Correcting ESL errors using phrasal SMT techniques. }.
+
+\bibitem[\protect\citename{{Park and Levy}}2011]{}
+{Y. A. Park and R. Levy}.
+\newblock 2011.
+\newblock {\em Automated whole sentence grammar correction using a noisy channel model}.
+
 
 \end{thebibliography}
 
