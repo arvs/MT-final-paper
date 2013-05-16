@@ -34,14 +34,68 @@
 
 \section{Background}
 
-The following instructions are directed to authors of papers accepted
-for publication in the NAACL HLT 2012 proceedings.  All authors are required
-to adhere to these specifications. Authors are required to provide 
-a Portable Document Format (PDF) version of
-their papers.  The proceedings will be printed on US-Letter paper.
-Authors from countries in which access to word-processing systems is
-limited should contact the publication chairs as soon as possible.
+This paper details our experiments in using Statistical Machine translation methods for 
+error detection in English as part of the Conll-13 challenge. The challenge involved 
+correction of errors made by Singaporean students of English.
 
+\section{Problem Background: Types of error}
+\indent We begin by motivating the approach we take by considering the problem in a little more depth. Two of the most common types of error are article errors and preposition errors. 
+Article errors are most common for speakers of languages which themselves lack any sort of article 
+(some very common examples are Chinese, Japanese, and Russian), though they are naturally present 
+in the writings of most all students. Similarly, preposition errors account for a large number of 
+errors, due to the vast complexity of the English preposition system. Preposition use is highly particular, 
+and is often governed by the context in which the preposition appears (making it a good candidate for 
+phrase based correction). \newline
+
+\indent An additional major source of error is that of collocation (or idiomatic) errors. These 
+arise when there is a strong association between words even though other choices might be semantically 
+or syntactically correct (for example, strong computer makes sense, but powerful computer is idiomatically 
+rendered). Additionally, this type of error encompasses stock idiomatic phrases where the individual words 
+are not obviously related to the actual meaning (to “hit the nail on the head”, to “kick the bucket”, etc). 
+These phrases are usually non-modifiable in many contexts or cannot be modified and retain their meaning 
+unless great care is used. While rule-based approaches lead to extremely complex definitions, a 
+statistical approach is well suited to collocation errors since it provides an easy and concrete way 
+of taking into account the relationships between words and/or whole idiomatic phrases. \newline
+
+\section{Baseline}
+
+\section{Baseline problems}
+\indent The baseline displayed atrocious performance across the board. Two major and easily observable 
+issues arise: the number of useless phrases in the phrase table, and the bias of phrases towards not 
+making changes. \newline
+\indent Firstly, we note that the vast majority of phrases in the phrase table are entirely unhelpful 
+in decoding. For example, the number of possible translations of "(" is obscenely large, having hundreds
+of entries. Of these, only a handful are useful, and even then the most common substitution should still 
+be "(", as no errors using the left paren character occur anyway. This happens for virtually every piece 
+of punctuation and trivial phrase, and does nothing except slow down decoding and cause spurious translation 
+issues during decoding. We deal with a solution to this in the phrase table pruning section. \newline
+\indent A second issue is that the phrase table entries are biased towards not making changes when 
+decoding happens. That is, for a given phrase, the phrase table causes there to be a much larger chance 
+of said phrase remaining unchanged in the final product, rather than changing and potentially correcting 
+an error. A fairly typical PT entry indicative of this issue is: \newline
+\newline
+\indent , according to ||| , according to the ||| 0.166667 0.99065 0.0384615 0.578006 2.718 ||| 0-0 1-1 2-2 ||| 6 26 1 \newline \newline
+\indent , according to ||| , according to ||| 0.961538 0.99065 0.961538 0.986281 2.718 ||| 0-0 1-1 2-2 ||| 26 26 25 \newline \newline
+\indent We note here that the bottom phrase (which makes no changes) has a probability of 
+0.961538, while the top phrase has a probability of 0.0384615. We talk about our approach to this 
+in the section on downsampling. \newline
+\indent Additionally, we run into the problem of the BLEU metric, which causes problems with both 
+tuning and evaluation. In this task, the BLEU metric used by Moses is quite a poor indicator 
+of success. BLEU only checks for particular N-Grams in the reference, and in this task there is only a 
+single reference sentence. This means that BLEU measures only N-grammatic distance to the supplied reference, 
+which makes no guarantee of fluency. That is, a given change might drastically improve a sentence and make an 
+otherwise incorrect sentence mostly or completely correct, but this may not be reflected in the BLEU score if 
+it does not completely line up with the reference sentence. This leads to both strange tuning artifacts (such 
+as the over-tuning described above) and difficult-to-interpret evaluation results. \newline
+\section{Corpus cleaning and Datasets}
+
+\section{Approach}
+
+\section{Results}
+
+\section{Observations}
+
+\section{Future work}
 
 \section{Task + Corpus}
 
