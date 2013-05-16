@@ -36,66 +36,7 @@
 
 This paper details our experiments in using Statistical Machine translation methods for 
 error detection in English as part of the Conll-13 challenge. The challenge involved 
-correction of errors made by Singaporean students of English.
-
-\section{Problem Background: Types of error}
-\indent We begin by motivating the approach we take by considering the problem in a little more depth. Two of the most common types of error are article errors and preposition errors. 
-Article errors are most common for speakers of languages which themselves lack any sort of article 
-(some very common examples are Chinese, Japanese, and Russian), though they are naturally present 
-in the writings of most all students. Similarly, preposition errors account for a large number of 
-errors, due to the vast complexity of the English preposition system. Preposition use is highly particular, 
-and is often governed by the context in which the preposition appears (making it a good candidate for 
-phrase based correction). \newline
-
-\indent An additional major source of error is that of collocation (or idiomatic) errors. These 
-arise when there is a strong association between words even though other choices might be semantically 
-or syntactically correct (for example, strong computer makes sense, but powerful computer is idiomatically 
-rendered). Additionally, this type of error encompasses stock idiomatic phrases where the individual words 
-are not obviously related to the actual meaning (to “hit the nail on the head”, to “kick the bucket”, etc). 
-These phrases are usually non-modifiable in many contexts or cannot be modified and retain their meaning 
-unless great care is used. While rule-based approaches lead to extremely complex definitions, a 
-statistical approach is well suited to collocation errors since it provides an easy and concrete way 
-of taking into account the relationships between words and/or whole idiomatic phrases. \newline
-
-\section{Baseline}
-
-\section{Baseline problems}
-\indent The baseline displayed atrocious performance across the board. Two major and easily observable 
-issues arise: the number of useless phrases in the phrase table, and the bias of phrases towards not 
-making changes. \newline
-\indent Firstly, we note that the vast majority of phrases in the phrase table are entirely unhelpful 
-in decoding. For example, the number of possible translations of "(" is obscenely large, having hundreds
-of entries. Of these, only a handful are useful, and even then the most common substitution should still 
-be "(", as no errors using the left paren character occur anyway. This happens for virtually every piece 
-of punctuation and trivial phrase, and does nothing except slow down decoding and cause spurious translation 
-issues during decoding. We deal with a solution to this in the phrase table pruning section. \newline
-\indent A second issue is that the phrase table entries are biased towards not making changes when 
-decoding happens. That is, for a given phrase, the phrase table causes there to be a much larger chance 
-of said phrase remaining unchanged in the final product, rather than changing and potentially correcting 
-an error. A fairly typical PT entry indicative of this issue is: \newline
-\newline
-\indent , according to ||| , according to the ||| 0.166667 0.99065 0.0384615 0.578006 2.718 ||| 0-0 1-1 2-2 ||| 6 26 1 \newline \newline
-\indent , according to ||| , according to ||| 0.961538 0.99065 0.961538 0.986281 2.718 ||| 0-0 1-1 2-2 ||| 26 26 25 \newline \newline
-\indent We note here that the bottom phrase (which makes no changes) has a probability of 
-0.961538, while the top phrase has a probability of 0.0384615. We talk about our approach to this 
-in the section on downsampling. \newline
-\indent Additionally, we run into the problem of the BLEU metric, which causes problems with both 
-tuning and evaluation. In this task, the BLEU metric used by Moses is quite a poor indicator 
-of success. BLEU only checks for particular N-Grams in the reference, and in this task there is only a 
-single reference sentence. This means that BLEU measures only N-grammatic distance to the supplied reference, 
-which makes no guarantee of fluency. That is, a given change might drastically improve a sentence and make an 
-otherwise incorrect sentence mostly or completely correct, but this may not be reflected in the BLEU score if 
-it does not completely line up with the reference sentence. This leads to both strange tuning artifacts (such 
-as the over-tuning described above) and difficult-to-interpret evaluation results. \newline
-\section{Corpus cleaning and Datasets}
-
-\section{Approach}
-
-\section{Results}
-
-\section{Observations}
-
-\section{Future work}
+correction of errors made by Singaporean students of English
 
 \section{Task + Corpus}
 
@@ -140,131 +81,138 @@ The corpus itself is comprised of ~1400 annotated essays written by english-seco
 
 For the initial approach to this task, however, we looked to train a system that would identify a set of five errors: SVA, ArtOrDet, Nn, VForm, and Prep. The total corpus amounted to 67372 sentences, of which ~15,000 were noisy (references, urls, etc). Of that, 11288 sentences had annotations with those tags, leaving a fairly small dataset on which to train. After the time of this writing, ConLL has released an additional dataset - the blind test data with the gold references, so we anticipate that this dataset will grow significantly.
 
-\section{Baseline}
+\section{Problem Background: Types of error}
+\indent We begin by motivating the approach we take by considering the problem in a little more depth. Two of the most common types of error are article errors and preposition errors. 
+Article errors are most common for speakers of languages which themselves lack any sort of article 
+(some very common examples are Chinese, Japanese, and Russian), though they are naturally present 
+in the writings of most all students. Similarly, preposition errors account for a large number of 
+errors, due to the vast complexity of the English preposition system. Preposition use is highly particular, 
+and is often governed by the context in which the preposition appears (making it a good candidate for 
+phrase based correction). \newline
 
-Our baseline system used Moses to translate between a test corpus of original essays and the counterpart essays with all the annotations applied. This flattened corpus was split into ~58000 training sentences, ~2000 sentences for tuning, and ~8000 test sentences. 
+\indent An additional major source of error is that of collocation (or idiomatic) errors. These 
+arise when there is a strong association between words even though other choices might be semantically 
+or syntactically correct (for example, strong computer makes sense, but powerful computer is idiomatically 
+rendered). Additionally, this type of error encompasses stock idiomatic phrases where the individual words 
+are not obviously related to the actual meaning (to “hit the nail on the head”, to “kick the bucket”, etc). 
+These phrases are usually non-modifiable in many contexts or cannot be modified and retain their meaning 
+unless great care is used. While rule-based approaches lead to extremely complex definitions, a 
+statistical approach is well suited to collocation errors since it provides an easy and concrete way 
+of taking into account the relationships between words and/or whole idiomatic phrases. \newline
+
+\section{Baseline}
+Our baseline system used Moses to "translate" between a test corpus of original essays and the counterpart essays with all the annotations applied. This "flattened" corpus was split into ~58000 training sentences, ~2000 sentences for tuning, and ~8000 test sentences. 
 
 Moses used Giza++ to align the sentences, with default heuristics and reordering models (grow-diag-final, msd-bidirectional-fe). The tuning used MERT with default features. 
 
 To score the baseline, we use BLEU as well as the $M^2$ scorer. The $M^2$ scorer scores precision, accuracy, and F1 against the annotations, rather than the text itself. Though the conference version of $M^2$ is case-sensitive, we use a case-insensitive version for simplicity - recasing in English is a trivial task. Though both of these scorers support multi-reference evaluation, the corpus itself only has a single-reference gold reference file. Clearly, there are multiple equally fluent machine-generated correction candidates, even within the phrase table generated by the small training corpus, so we think this is an area that needs to be explored in terms of test corpus augmentation.
 
-In reality, the optimality of a correction would be gauged by fluency and grammatical cohesion of the final generation, so neither Bleu nor $M^2$ adequately capture the ideal result - an ideal result would likely be modeled by a combination of the two, with multiple references. 
+In reality, the optimality of a "correction" would be gauged by fluency and grammatical cohesion of the final generation, so neither Bleu nor $M^2$ adequately capture the ideal result - an ideal result would likely be modeled by a combination of the two, with multiple references. 
 
-
-\subsection{Issues with Baseline}
-
-\section{Corpus Cleaning + Datasets}
+\section{Issues with Baseline}
+\indent The baseline displayed atrocious performance across the board. Two major and easily observable 
+issues arise: the number of useless phrases in the phrase table, and the bias of phrases towards not 
+making changes. \newline
+\indent Firstly, we note that the vast majority of phrases in the phrase table are entirely unhelpful 
+in decoding. For example, the number of possible translations of "(" is obscenely large, having hundreds
+of entries. Of these, only a handful are useful, and even then the most common substitution should still 
+be "(", as no errors using the left paren character occur anyway. This happens for virtually every piece 
+of punctuation and trivial phrase, and does nothing except slow down decoding and cause spurious translation 
+issues during decoding. We deal with a solution to this in the phrase table pruning section. \newline
+\indent A second issue is that the phrase table entries are biased towards not making changes when 
+decoding happens. That is, for a given phrase, the phrase table causes there to be a much larger chance 
+of said phrase remaining unchanged in the final product, rather than changing and potentially correcting 
+an error. A fairly typical PT entry indicative of this issue is: \newline
+\newline
+\indent , according to ||| , according to the ||| 0.166667 0.99065 0.0384615 0.578006 2.718 ||| 0-0 1-1 2-2 ||| 6 26 1 \newline \newline
+\indent , according to ||| , according to ||| 0.961538 0.99065 0.961538 0.986281 2.718 ||| 0-0 1-1 2-2 ||| 26 26 25 \newline \newline
+\indent We note here that the bottom phrase (which makes no changes) has a probability of 
+0.961538, while the top phrase has a probability of 0.0384615. We talk about our approach to this 
+in the section on downsampling. \newline
+\indent Additionally, we run into the problem of the BLEU metric, which causes problems with both 
+tuning and evaluation. In this task, the BLEU metric used by Moses is quite a poor indicator 
+of success. BLEU only checks for particular N-Grams in the reference, and in this task there is only a 
+single reference sentence. This means that BLEU measures only N-grammatic distance to the supplied reference, 
+which makes no guarantee of fluency. That is, a given change might drastically improve a sentence and make an 
+otherwise incorrect sentence mostly or completely correct, but this may not be reflected in the BLEU score if 
+it does not completely line up with the reference sentence. This leads to both strange tuning artifacts (such 
+as the over-tuning described above) and difficult-to-interpret evaluation results. \newline
+\section{Corpus cleaning and Datasets}
 
 The first immediate issue with the baseline phrase table was that references and urls generated a large amount of noise in the correction data. Since we used the wordpunct NLTK tokenization scheme, urls in particular were inconsistently treated as multiple words, creating noisy alignments as well. Thus, the first cleaning step was to eliminate references completely, re-adding them after the correction. We accomplished this with a simple reegex substitution. 
 
-Additionally, to experiment on the domain sensitivity of our system, we split the corpus by essay topic. This was particularly necessary because one of the challenges of the shared task was to submit system output for topics both inside and outside the training data. However, since the topics were not available a priori, we used an online version of the Latent Dirichlet Allocation (LDA) algorithm to generate a topic model, and then a K-Means clustering implementation to split the documents by those topics. We were then able to generate a held out dataset with 21572 training sentences (no references) with all but one topic, and 8695 test sentences (no references) with the remaining topic. This experiment showed that the NUCLE essay topics were largely similar in content, and that domain sensitivity is still a concern that ought to be tested by a heldout test set with a topic further removed from the training corpus.
+Additionally, to experiment on the domain sensitivity of our system, we split the corpus by essay topic. This was particularly necessary because one of the challenges of the shared task was to submit system output for topics both inside and outside the training data. However, since the topics were not available a priori, we used an online version of the Latent Dirichlet Allocation (LDA) algorithm to generate a topic model, and then a K-Means clustering implementation to split the documents by those topics. We were then able to generate a "held out" dataset with 21572 training sentences (no references) with all but one topic, and 8695 test sentences (no references) with the remaining topic. This experiment showed that the NUCLE essay topics were largely similar in content, and that domain sensitivity is still a concern that ought to be tested by a heldout test set with a topic further removed from the training corpus.
 
 To experiment with the impact of zero-annotation sentences in the training corpus, we also generated datasets without correct sentences. This left a dataset of 11288 sentences, of which we used 10000 to train and 288 to tune. 
 
 To run stemming experiments, we used the stemmers bundled with NLTK. We stemmed and lemmatized the two corpora mentioned above with the Lancaster and Snowball stemmers and the WordNet lemmatizer to experiment with various degrees of stemming aggressiveness.
 
-\subsection{Layout}
-\label{ssec:layout}
+We used a Moses (SRILM) ngram language model trained on the test and dev datasets. Given the topic closeness between the test and train sets and the relatively small size of the test set, there was not a significant OOV problem, and experiments with big language models trained on the Brown Corpus did not yield any benefits to either of the scoring metrics.
 
-Format manuscripts two columns to a page, in the manner these
-instructions are formatted. The exact dimensions for a page on US-letter
-paper are:
+\section{Approach}
+\subsection{Significance Testing}
+\subsection{Downsampling}
+\subsection{Stemming}
+\subsection{NoCorrect - Only Errors}
 
-\begin{itemize}
-\item Left and right margins: 1in
-\item Top margin:1in
-\item Bottom margin: 1in
-\item Column width: 3.15in
-\item Column height: 9in
-\item Gap between columns: 0.2in
-\end{itemize}
+\section{Results}
 
-\noindent Papers should not be submitted on any other paper size. Exceptionally,
-authors for whom it is \emph{impossible} to format on US-Letter paper,
-may format for \emph{A4} paper. In this case, they should keep the \emph{top}
-and \emph{left} margins as given above, use the same column width,
-height and gap, and modify the bottom and right margins as necessary.
-Note that the text will no longer be centered.
+All the experiments we ran achieved consistently high Bleu scores, but this includes the sentences that were already correct and mapped to another correct sentence. When the test set was scored with BLEU without any modifications, it achieved a BLEU score of of 87.32, 95.8/90.6/85.5/80.6. \\
 
-\subsection{The First Page}
-\label{ssec:first}
+\begin{tabular}{ |l|l|}
+\hline
+\textbf{Experiment} & \textbf{Bleu} & \textbf{} & \textbf{} \\ \hline
+\textit{Baseline} & \textit{96.34, 98.7/97.1/95.6/94.1}\\ \hline
+\textit{Lancaster} & \textit{73.04, 88.2/77.6/68.6/60.6} \\ \hline
+\textit{WordNet} & \textit{86.48, 94.1/88.8/84.1/79.6} \\ \hline
+\textit{HeldOut} & \textit{96.81, 98.9/97.5/96.2/94.9} \\ \hline
+\textit{NoCorrect} & \textit{96.46, 98.7/97.2/95.7/94.3} \\ \hline
+\textit{Stem+NoCorr} & \textit{88.26, 95.8/90.8/86.0/81.6} \\ \hline
+\textit{HeldOut+Sig} & \textit{96.80, 98.9/97.5/96.1/94.8} \\ \hline
+\textit{NoCorr+Sig} & \textit{95.59, 98.5/96.5/94.6/92.8 } \\ \hline
+\textit{Lanc+Sig} & \textit{89.01, 96.3/91.2/87.0/82.9} \\ \hline
+\textit{Word+Sig} & \textit{92.87, 97.4/94.4/91.6/88.8} \\ \hline
+\end{tabular}
+\\\\
 
-Center the title, author's name(s) and affiliation(s) across both
-columns (or, in the case of initial submission, space for the names). 
-Do not use footnotes for affiliations.  Do not include the
-paper ID number assigned during the submission process. 
-Use the two-column format only when you begin the abstract.
+With the $M^2$ scorer, the different experiments yielded marginal improvements. In this case, the starting point for the score was 0.00, since the precision/recall/f1 were evaluated against only the generated and gold annotations. \\
 
-{\bf Title}: Place the title centered at the top of the first page, in
-a 15 point bold font.  (For a complete guide to font sizes and styles, see Table~\ref{font-table}.)
-Long title should be typed on two lines without
-a blank line intervening. Approximately, put the title at 1in from the
-top of the page, followed by a blank line, then the author's names(s),
-and the affiliation on the following line.  Do not use only initials
-for given names (middle initials are allowed). Do not format surnames
-in all capitals (e.g., ``Bangalore,'' not ``BANGALORE'').  The affiliation should
-contain the author's complete address, and if possible an electronic
-mail address. Leave about 0.75in between the affiliation and the body
-of the first page.
+\begin{tabular}{ |l|l|l|l|l|l| }
+\hline
+\textit{$M^2$} & \textit{Precision} & Recall & F1 \\ \hline
+\textit{Baseline} & \textit{0} & 0 & 0 \\ \hline
+\textit{Lancaster} & \textit{0.0215} & 0.1915 & 0.0387 \\ \hline
+\textit{WordNet} & \textit{0.049} & 0.1773 & 0.0768 \\ \hline
+\textit{HeldOut} & \textit{0.0116} & 0.0663 & 0.0198 \\ \hline
+\textit{NoCorrect} & \textit{0.0838} & 0.2555 & 0.1262 \\ \hline
+\textit{Stem+NoCorr} & \textit{0.0624} & 0.3086 & 0.1038 \\ \hline
+\textit{HeldOut+Sig} & \textit{0.0086} & 0.0312 & 0.0134 \\ \hline
+\textit{NoCorr+Sig} & \textit{0.0268} & 0.1031 & 0.0425 \\ \hline
+\textit{Lanc+Sig} & \textit{0.0073} & 0.0312 & 0.0118 \\ \hline
+\textit{Word+Sig} & \textit{0.0221} & 0.0906 & 0.0355 \\ \hline
+\end{tabular}
+\\\\
 
-{\bf Abstract}: Type the abstract at the beginning of the first
-column.  The width of the abstract text should be smaller than the
-width of the columns for the text in the body of the paper by about
-0.25in on each side.  Center the word {\bf Abstract} in a 12 point
-bold font above the body of the abstract. The abstract should be a
-concise summary of the general thesis and conclusions of the paper.
-It should be no longer than 200 words.  The abstract text should be in 10 point font.
+For the significance testing experiments, a significant amount of the phrase table was pruned of statistically insignificant entries. \\
 
-{\bf Text}: Begin typing the main body of the text immediately after
-the abstract, observing the two-column format as shown in 
-the present document.  Do not include page numbers.
+\begin{tabular}{|l|l|}
+\hline
+\textit{M2} & \textit{\% of PT pruned} \\ \hline
+\textit{HeldOut+Sig} & \textit{56.90\%} \\ \hline
+\textit{NoCorr+Sig} & \textit{53.17\%} \\ \hline
+\textit{Lanc+Sig} & \textit{51.81\%} \\ \hline
+\textit{Word+Sig} & \textit{57.57\%} \\ \hline
+\end{tabular}
 
-{\bf Indent} when starting a new paragraph. For reasons of uniformity,
-use Adobe's {\bf Times Roman} fonts, with 11 points for text and 
-subsection headings, 12 points for section headings and 15 points for
-the title.  If Times Roman is unavailable, use {\bf Computer Modern
-  Roman} (\LaTeX2e{}'s default; see section \ref{sect:pdf} above).
-Note that the latter is about 10\% less dense than Adobe's Times Roman
-font.
+\section{Observations}
 
-\subsection{Sections}
+\subsection{Significance Testing}
+\subsection{Downsampling}
+\subsection{Stemming}
+\subsection{NoCorrect - Only Errors}
 
-{\bf Headings}: Type and label section and subsection headings in the
-style shown on the present document.  Use numbered sections (Arabic
-numerals) in order to facilitate cross references. Number subsections
-with the section number and the subsection number separated by a dot,
-in Arabic numerals. 
 
-{\bf Citations}: Citations within the text appear
-in parentheses as~\cite{Gusfield:97} or, if the author's name appears in
-the text itself, as Gusfield~\shortcite{Gusfield:97}. 
-Append lowercase letters to the year in cases of ambiguities.  
-Treat double authors as in~\cite{Aho:72}, but write as 
-in~\cite{Chandra:81} when more than two authors are involved. 
-Collapse multiple citations as in~\cite{Gusfield:97,Aho:72}.
-
-\textbf{References}: Gather the full set of references together under
-the heading {\bf References}; place the section before any Appendices,
-unless they contain references. Arrange the references alphabetically
-by first author, rather than by order of occurrence in the text.
-Provide as complete a citation as possible, using a consistent format,
-such as the one for {\em Computational Linguistics\/} or the one in the 
-{\em Publication Manual of the American 
-Psychological Association\/}~\cite{APA:83}.  Use of full names for
-authors rather than initials is preferred.  A list of abbreviations
-for common computer science journals can be found in the ACM 
-{\em Computing Reviews\/}~\cite{ACM:83}.
-
-The \LaTeX{} and Bib\TeX{} style files provided roughly fit the
-American Psychological Association format, allowing regular citations, 
-short citations and multiple citations as described above.
-
-{\bf Appendices}: Appendices, if any, directly follow the text and the
-references (but see above).  Letter them in sequence and provide an
-informative title: {\bf Appendix A. Title of Appendix}.
-
-\textbf{Acknowledgment} sections should go as a last (unnumbered) section immediately
-before the references.  
+\section{Future work}
 
 \subsection{Footnotes}
 
@@ -281,26 +229,6 @@ paper near where they are first discussed, rather than at the end, if
 possible.  Wide illustrations may run across both columns and should be placed at
 the top of a page. Color illustrations are discouraged, unless you have verified that 
 they will be understandable when printed in black ink.
-
-\begin{table}
-\begin{center}
-\begin{tabular}{|l|rl|}
-\hline \bf Type of Text & \bf Font Size & \bf Style \\ \hline
-paper title & 15 pt & bold \\
-author names & 12 pt & bold \\
-author affiliation & 12 pt & \\
-the word ``Abstract'' & 12 pt & bold \\
-section titles & 12 pt & bold \\
-document text & 11 pt  &\\
-abstract text & 10 pt & \\
-captions & 10 pt & \\
-bibliography & 10 pt & \\
-footnotes & 9 pt & \\
-\hline
-\end{tabular}
-\end{center}
-\caption{\label{font-table} Font guide. }
-\end{table}
 
 {\bf Captions}: Provide a caption for every illustration; number each one
 sequentially in the form:  ``Figure 1. Caption of the Figure.'' ``Table 1.
