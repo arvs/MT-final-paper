@@ -76,52 +76,20 @@ For the initial approach to this task, however, we looked to train a system that
 
 \section{Problem Background: SMT motivation and literature}
 \indent We begin by motivating the approach we take by considering the problem in a little more depth. Two of the 
-most common types of error are article errors and preposition errors. 
-Article errors are most common for speakers of languages which themselves lack any sort of article 
-(some very common examples are Chinese, Japanese, and Russian), though they are naturally present 
-in the writings of most all students. Similarly, preposition errors account for a large number of 
-errors, due to the vast complexity of the English preposition system. Preposition use is highly particular, 
-and is often governed by the context in which the preposition appears (making it a good candidate for 
+most common types of error are article errors and preposition errors. Article errors are most common for speakers of languages which themselves lack any sort of article (some very common examples are Chinese, Japanese, and Russian), though they are naturally present in the writings of most all students. Similarly, preposition errors account for a large number of errors, due to the vast complexity of the English preposition system. Preposition use is highly particular, and is often governed by the context in which the preposition appears (making it a good candidate for 
 phrase based correction). \newline
 
-\indent An additional major source of error is that of collocation (or idiomatic) errors. These 
-arise when there is a strong association between words even though other choices might be semantically 
-or syntactically correct (for example, strong computer makes sense, but powerful computer is idiomatically 
-rendered). Additionally, this type of error encompasses stock idiomatic phrases where the individual words 
-are not obviously related to the actual meaning (to “hit the nail on the head”, to “kick the bucket”, etc). 
-These phrases are usually non-modifiable in many contexts or cannot be modified and retain their meaning 
-unless great care is used. While rule-based approaches lead to extremely complex definitions, a 
-statistical approach is well suited to collocation errors since it provides an easy and concrete way 
+\indent An additional major source of error is that of collocation (or idiomatic) errors. These arise when there is a strong association between words even though other choices might be semantically or syntactically correct (for example, strong computer makes sense, but powerful computer is idiomatically rendered). Additionally, this type of error encompasses stock idiomatic phrases where the individual words are not obviously related to the actual meaning (to “hit the nail on the head”, to “kick the bucket”, etc). 
+These phrases are usually non-modifiable in many contexts or cannot be modified and retain their meaning unless great care is used. While rule-based approaches lead to extremely complex definitions, a statistical approach is well suited to collocation errors since it provides an easy and concrete way 
 of taking into account the relationships between words and/or whole idiomatic phrases. \newline
 
-\indent The SMT approach to error detection is relatively new. The first major result was reported by Brockett et. al, 
-and was a significant departure from the rule-based models of the time. This new perspective was 
-motivated by a number of different advantages that a SMT approach would have over a rule-based one. 
-For example, many of the rule-based approaches of the time involved individual classifiers detecting
-a single-word error in a particular context. This is problematic and rather unrealistic when considering
-the mistakes that actual English Students make. Usually, in such cases an error will involve multiple words 
-in a complex context; thus correcting a single word leads to a failure to appreciate interdependencies between 
-errors, and often involves reacting to a context which itself contains errors. Beyond this sort of error 
-relationship, ESL speakers and writers might make idiosyncratic mistakes related to false assumptions of 
-similarity to their native language - as a result, one group of students might make a particular 
-set of mistakes regularly while another makes a separate one, introducing a large amount of complexity 
-to the rules needed to classify such errors. \newline
+\indent The SMT approach to error detection is relatively new. The first major result was reported by Brockett et. al ~\cite{phrasal}, and was a significant departure from the rule-based models of the time. This new perspective was motivated by a number of different advantages that a SMT approach would have over a rule-based one. For example, many of the rule-based approaches of the time involved individual classifiers detecting a single-word error in a particular context. This is problematic and rather unrealistic when considering the mistakes that actual English Students make. Usually, in such cases an error will involve multiple words in a complex context; thus correcting a single word leads to a failure to appreciate interdependencies between errors, and often involves reacting to a context which itself contains errors. Beyond this sort of error relationship, ESL speakers and writers might make idiosyncratic mistakes related to false assumptions of similarity to their native language - as a result, one group of students might make a particular set of mistakes regularly while another makes a separate one, introducing a large amount of complexity to the rules needed to classify such errors. \newline
 
-\indent To these ends, the SMT approach (particularly, the Phrase-based one first 
-used by Brockett and continued in the other papers and systems surveyed) presents 
-a handy way of treating these sorts of problems. Intuitively, a model mapping phrases to 
-phrases allows a model to take into the account of both the error and the idiomatically correct 
-phrase. In addition, it allows the capturing of statistical information pertaining to the kinds 
-of errors that learners with a particular native language tend to make. A favorite example in the 
-literature is that of mass noun errors - a common appearance in the writing samples of ESL students 
-with native east asian languages. Consider, for example, the short sentence “I received many informations 
-during my trip.”  A single-word correction system might correct “many” to “much” and “informations” to 
-“information”, but the sentence remains idiomatically awkward. A more correct rendering would involve 
-hanging the verb “received” and might look something like “I learned a lot during my trip”. Intuitively, 
-we can see that this could be arrived at by matching “received many informations” and “learned a lot”, 
-rather than attempting to remove errors word by word and ignoring context. \newline
+\indent To these ends, the SMT approach (particularly, the Phrase-based one first used by Brockett and continued in the other papers and systems surveyed) presents a handy way of treating these sorts of problems. Intuitively, a model mapping phrases to phrases allows a model to take into the account of both the error and the idiomatically correct 
+phrase. In addition, it allows the capturing of statistical information pertaining to the kinds of errors that learners with a particular native language tend to make. A favorite example in the literature is that of mass noun errors - a common appearance in the writing samples of ESL students 
+with native east asian languages. Consider, for example, the short sentence “I received many informations during my trip.”  A single-word correction system might correct “many” to “much” and “informations” to “information”, but the sentence remains idiomatically awkward. A more correct rendering would involve hanging the verb “received” and might look something like “I learned a lot during my trip”. Intuitively, we can see that this could be arrived at by matching “received many informations” and “learned a lot”, rather than attempting to remove errors word by word and ignoring context. \newline
 
-\indent A similar approach and an extension to the model introduced by Brockett is introduced by Park and Levy. 
+\indent A similar approach and an extension to the model introduced by Brockett is introduced by Park and Levy~\cite{park}. 
 In particular, while a Noisy channel model is used, and the authors also include a method of dealing with particular 
 types of errors via the a noise model implemented as a weighted Finite State Transducer (as opposed 
 to a generalized error-correction translation model as Brockett does). The parameters of this noise model 
@@ -251,6 +219,40 @@ With the $M^2$ scorer, the different experiments yielded marginal improvements. 
 \end{tabular}
 \\\\
 
+The experiments were also all repeated after downsampling the phrase table.\\
+
+\begin{tabular}{ |l|l|}
+\hline
+\textbf{Test + $\alpha$} & \textbf{Bleu} \\ \hline
+\textit{Heldout+0.7} & \textit{91.51, 98.5/94.9/91.2/87.8} \\ \hline
+\textit{Heldout+0.9} & \textit{94.93, 98.9/96.7/94.6/92.6} \\ \hline
+\textit{Nocorrect+0.7} & \textit{87.31, 95.8/90.6/85.5/80.6 } \\ \hline
+\textit{Nocorrect+0.9} & \textit{87.31, 95.8/90.6/85.5/80.6 } \\ \hline
+\textit{Nocorr\_stem+0.7} & \textit{85.98, 98.1/92.1/86.2/80.7 } \\ \hline
+\textit{Nocorr\_stem+0.9} & \textit{90.98, 98.7/94.8/91.1/87.4 } \\ \hline
+\textit{Lanc+0.7} & \textit{83.97, 97.2/89.8/83.5/77.7 } \\ \hline
+\textit{Lanc+0.9} & \textit{87.95, 97.7/92.1/87.2/82.7 } \\ \hline
+\textit{Wordnet+0.7} & \textit{87.13, 97.8/92.3/87.2/82.3 } \\ \hline
+\textit{Wordnet+0.9} & \textit{90.94, 98.4/94.6/91.0/87.4 } \\ \hline
+\end{tabular}
+
+And with $M^2$ results \\
+
+\begin{tabular}{ |l|l|l|l|l|l| }
+\hline
+\textbf{Test + $\alpha$} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\ \hline
+\textit{Heldout+0.7} & \textit{0.0328} & 0.1406 & 0.0532 \\ \hline
+\textit{Heldout+0.9} & \textit{0.0194} & 0.075 & 0.0308 \\ \hline
+\textit{Nocorrect+0.7} & \textit{0.000} & 0.000 & 0.000 \\ \hline
+\textit{Nocorrect+0.9} & \textit{0.000} & 0.000 & 0.000 \\ \hline
+\textit{NoCor\_stem+0.7} & \textit{0.000} & 0.000 & 0.000 \\ \hline
+\textit{NoCor\_stem+0.9} & \textit{0.000} & 0.000 & 0.000 \\ \hline
+\textit{Lanc+0.7} & \textit{0.017} & 0.0813 & 0.0282 \\ \hline
+\textit{Lanc+0.9} & \textit{0.0148} & 0.0656 & 0.0242 \\ \hline
+\textit{Wordnet+0.7} & \textit{0.029} & 0.1344 & 0.0477 \\ \hline
+\textit{Wordnet+0.9} & \textit{0.0262} & 0.1125 & 0.0425 \\ \hline
+\end{tabular}
+
 For the significance testing experiments, a significant amount of the phrase table was pruned of statistically insignificant entries. \\
 
 \begin{tabular}{|l|l|}
@@ -379,12 +381,12 @@ We especially want to thank Professors Habash and Tomeh for their guidance and p
 \newblock 2012.
 \newblock {\em A scalable distributed syntactic, semantic, and lexical language model. Computational Linguistics v38, 3, pp 631-671. MIT Press}.
 
-\bibitem[\protect\citename{{Brockett et. al}}2006]{}
+\bibitem[\protect\citename{{Brockett et. al}}2006]{phrasal}
 { C. Brockett, W. B. Dolan, and M. Gamon}.
 \newblock 2006.
 \newblock {\em Correcting ESL errors using phrasal SMT techniques. }.
 
-\bibitem[\protect\citename{{Park and Levy}}2011]{}
+\bibitem[\protect\citename{{Park and Levy}}2011]{park}
 {Y. A. Park and R. Levy}.
 \newblock 2011.
 \newblock {\em Automated whole sentence grammar correction using a noisy channel model}.
