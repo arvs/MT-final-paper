@@ -145,13 +145,19 @@ The results of this project were disappointing but not disheartening, and rather
 
 \subsection{Pre-Editing}
 
+The NoCorrect model achieved fairly good results when decoding sentences with only errors, so one possible approach to error correction would be to train a model on incorrect sentences, and then use syntactic information to decide whether a sentence  "probably" needs a correction. This is analogous to "pre-editing" with rules, but to avoid the need for written rules, which would obviate the need for SMT, that information could be incorporated in a large language model~\cite{largelm} - high perplexity sentences would then be considered translation candidates.
+
 \subsection{Corpus Augmentation}
+
+One of the issues with even running meaningful experiments on the corpus was the lack of training data, and the small number of training examples of errors other than the 5 main types. However, none of the methods we used actually used the error types, and instead translated between flattened versions of the annotated corpora. This opens the door to augmenting the corpus - in tests, the closest documents stylistically to the NUCLE corpus were wikipedia articles in terms of level of grammar formality. One can use the topics generated from LDA topic analysis to generate a Wikipedia corpus, and then align it with a parallel foreign language corpus~\cite{wiki}. The foreign language corpus can then be translated to come up with a aligned, incorrect $\rightarrow$ correct parallel corpus. The additional advantage of this approach is that it may detect idiosyncratic language errors with careful selection of the parallel Wikipedia language.
 
 \subsection{Tuning Modifications}
 
+Much of the motivation for statistical significance pruning and downsampling was that the tuning process overweighted BLEU correctness, which meant that correct $\rightarrow$ correct translations were prioritized. This could partially be solved by minimizing losses against the $M^2$ metric in combination with BLEU, either as features or otherwise.
+
 \subsection{Iterative Decoding}
 
-\subsection{Learning Rules from Phrase Tables}
+One of the consistent themes in the project was that different error types benefit from different approaches. This leads to the conclusion that it may be beneficial to train multiple systems on different error types, and then iteratively decode in a logical chain to get better performance.
 
 References
 
