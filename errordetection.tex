@@ -74,7 +74,8 @@ The corpus itself is comprised of ~1400 annotated essays written by english-seco
 For the initial approach to this task, however, we looked to train a system that would identify a set of five errors: SVA, ArtOrDet, Nn, VForm, and Prep. The total corpus amounted to 67372 sentences, of which ~15,000 were noisy (references, urls, etc). Of that, 11288 sentences had annotations with those tags, leaving a fairly small dataset on which to train. After the time of this writing, ConLL has released an additional dataset - the blind test data with the gold references, so we anticipate that this dataset will grow significantly.
 
 \section{Problem Background: SMT motivation}
-\indent We begin by motivating the approach we take by considering the problem in a little more depth. Two of the most common types of error are article errors and preposition errors. 
+\indent We begin by motivating the approach we take by considering the problem in a little more depth. Two of the 
+most common types of error are article errors and preposition errors. 
 Article errors are most common for speakers of languages which themselves lack any sort of article 
 (some very common examples are Chinese, Japanese, and Russian), though they are naturally present 
 in the writings of most all students. Similarly, preposition errors account for a large number of 
@@ -212,13 +213,22 @@ For the significance testing experiments, a significant amount of the phrase tab
 \section{Observations}
 
 \subsection{Significance Testing}
+\indent Firstly, we notice that a huge amount of the PT has been pruned, more than 50\% in most cases. Second, we notice an 
+almost monotone increase in BLEU score - which, while hard to interpret, does mean that significance testing moves the 
+output closer to the reference. Sadly, we still see no very valueable improvement in the M2 score. \newline
 \subsection{Downsampling}
+\indent Downsampling was attempted at values of $\alpha = 0.7, \alpha = 0.9$, as those were the best of the handful of values we tried. 
+The effect was hardly pronounced, and seems to make little difference in BLEU or M2 score. However, more thorough testing 
+might have allowed us to find a more interesting pattern, and is a suitable goal for future work. \newline
 \subsection{Stemming}
 \subsection{NoCorrect - Only Errors}
 
 
 \section{Future work}
-
+% Add what you were going to add, I just wanted to put one more thing here
+\indent Additionally, this look at the downsampling model was not comprehensive and not extremely conclusive - it raised performance in
+ one case, but the actual effect is hard to measure and interpret. In particular, it seems that future work could be
+  done by optimizing the $\alpha$ parameter, or by transforming the distribution in more interesting ways. \newline
 
 
 \begin{thebibliography}{}
