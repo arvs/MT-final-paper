@@ -1,4 +1,4 @@
-LATEX = pdflatex -interaction=nonstopmode -file-line-error errordetection.tex && mv errordetection.pdf 
+LATEX = pdflatex -interaction=nonstopmode -file-line-error errordetection.tex
 build:
 	$(LATEX)
 

@@ -32,7 +32,7 @@
   but remove author-identifying information.
 \end{abstract}
 
-\section{Introduction}
+\section{Background}
 
 The following instructions are directed to authors of papers accepted
 for publication in the NAACL HLT 2012 proceedings.  All authors are required
@@ -43,90 +43,71 @@ Authors from countries in which access to word-processing systems is
 limited should contact the publication chairs as soon as possible.
 
 
-\section{General Instructions}
+\section{Task + Corpus}
 
-Manuscripts must be in two-column format.  Exceptions to the
-two-column format include the title, as well as the 
-authors' names and complete
-addresses (only in the final version, not in the version submitted for review), 
-which must be centered at the top of the first page (see
-the guidelines in Subsection~\ref{ssec:first}), and any full-width
-figures or tables .  Type single-spaced.  Do not number the pages.
-Start all pages directly under the top margin.  See the guidelines
-later regarding formatting the first page.
+This project was initiated as a submission to the ConLL 2013 Shared Task: Grammatical Error Correction \footnote{http://www.comp.nus.edu.sg/~nlp/conll13st.html}. As a result, all training and test data was from a provided corpus, the National University Singapore Corpus of Learner English, or NUCLE, and trained systems were scored with the provided NUS MaxMatch, or $M^2$ scorer. 
 
-%% If the paper is produced by a printer, make sure that the quality
-%% of the output is dark enough to photocopy well.  It may be necessary
-%% to have your laser printer adjusted for this purpose.  Papers that are too
-%% faint to reproduce well may not be included.
+The corpus itself is comprised of ~1400 annotated essays written by english-second-language Singaporean students. The annotations provide an error type and correction, from the below types of errors:
 
-%% {\bf Do not print page numbers on the manuscript.}  Write them lightly
-%% on the back of each page in the upper left corner along with the
-%% (first) author's name.
+\begin{tabular}{| l | c |}
+  \hline
+  tag & category \\
+  \hline
+  Vt & Verb tense \\
+  Vm & Verb modal \\
+  V0 & Missing verb \\ 
+  Vform & Verb form \\
+  SVA & Subject-verb-agreement \\
+  ArtOrDet & Article or Determiner \\
+  Nn & Noun number \\
+  Npos & Noun possesive \\
+  Pform & Pronoun form \\
+  Pref & Pronoun reference \\
+  Prep & Preposition \\
+  Wci & Wrong collocation/idiom \\
+  Wa & Acronyms \\
+  Wform & Word form \\
+  Wtone & Tone \\
+  Srun & Runons, comma splice \\
+  Smod & Dangling modifier \\
+  Spar & Parallelism \\
+  Sfrag & Fragment \\
+  Ssub & Subordinate clause \\
+  WOinc & Incorrect sentence form \\
+  WOadv & Adverb/adjective position \\
+  Trans & Link word/phrases \\
+  Mec & Punctuation, capitalization, spelling, typos \\
+  Rloc & Local redundancy \\
+  Cit & Citation \\
+  Others & Other errors \\
+  Um & Unclear meaning (cannot be corrected) \\
+  \hline
+\end{tabular}
 
-The maximum length of a manuscript is eight (8) pages for the main
-conference, printed single-sided, plus two (2) pages for references
-(see Section~\ref{sec:length} for additional information on the
-maximum number of pages).  Do not number the pages.
+For the initial approach to this task, however, we looked to train a system that would identify a set of five errors: SVA, ArtOrDet, Nn, VForm, and Prep. The total corpus amounted to 67372 sentences, of which ~15,000 were noisy (references, urls, etc). Of that, 11288 sentences had annotations with those tags, leaving a fairly small dataset on which to train. After the time of this writing, ConLL has released an additional dataset - the blind test data with the gold references, so we anticipate that this dataset will grow significantly.
 
-The review process is double-blind, so do not include any author information (names, addresses) when submitting a paper for review.  However, you should allocate space for the names and addresses so that they will fit in the final (accepted) version.  This is best done by either providing fake or blank names and addresses (as shown in this paper).
+\section{Baseline}
 
-\subsection{Electronically-available resources}
+Our baseline system used Moses to translate between a test corpus of original essays and the counterpart essays with all the annotations applied. This flattened corpus was split into ~58000 training sentences, ~2000 sentences for tuning, and ~8000 test sentences. 
 
-NAACL HLT provides this description in \LaTeX2e{} ({\tt naaclhlt2012.tex}) and PDF
-format ({\tt naaclhlt2012.pdf}), along with the \LaTeX2e{} style file used to
-format it ({\tt naaclhlt2012.sty}) and an ACL bibliography style ({\tt naaclhlt2012.bst}).
-These files are all available at
-{\tt http://naaclhlt2012.org}.  A Microsoft Word
-template file ({\tt naaclhlt2012.dot}) is also available at the same URL. We
-strongly recommend the use of these style files, which have been
-appropriately tailored for the NAACL HLT 2012 proceedings.
+Moses used Giza++ to align the sentences, with default heuristics and reordering models (grow-diag-final, msd-bidirectional-fe). The tuning used MERT with default features. 
+
+To score the baseline, we use BLEU as well as the $M^2$ scorer. The $M^2$ scorer scores precision, accuracy, and F1 against the annotations, rather than the text itself. Though the conference version of $M^2$ is case-sensitive, we use a case-insensitive version for simplicity - recasing in English is a trivial task. Though both of these scorers support multi-reference evaluation, the corpus itself only has a single-reference gold reference file. Clearly, there are multiple equally fluent machine-generated correction candidates, even within the phrase table generated by the small training corpus, so we think this is an area that needs to be explored in terms of test corpus augmentation.
+
+In reality, the optimality of a correction would be gauged by fluency and grammatical cohesion of the final generation, so neither Bleu nor $M^2$ adequately capture the ideal result - an ideal result would likely be modeled by a combination of the two, with multiple references. 
 
 
-\subsection{Format of Electronic Manuscript}
-\label{sect:pdf}
+\subsection{Issues with Baseline}
 
-For the production of the electronic manuscript you must use Adobe's
-Portable Document Format (PDF). This format can be generated from
-postscript files: on Unix systems, you can use {\tt ps2pdf} for this
-purpose; under Microsoft Windows, you can use Adobe's Distiller, or
-if you have cygwin installed, you can use {\tt dvipdf} or
-{\tt ps2pdf}.  Note 
-that some word processing programs generate PDF which may not include
-all the necessary fonts (esp. tree diagrams, symbols). When you print
-or create the PDF file, there is usually an option in your printer
-setup to include none, all or just non-standard fonts.  Please make
-sure that you select the option of including ALL the fonts.  {\em
-  Before sending it, test your {\/\em PDF} by printing it from a
-  computer different from the one where it was created}. Moreover,
-some word processor may generate very large postscript/PDF files,
-where each page is rendered as an image. Such images may reproduce
-poorly.  In this case, try alternative ways to obtain the postscript
-and/or PDF.  One way on some systems is to install a driver for a
-postscript printer, send your document to the printer specifying
-``Output to a file'', then convert the file to PDF.
+\section{Corpus Cleaning + Datasets}
 
-For reasons of uniformity, Adobe's {\bf Times Roman} font should be
-used. In \LaTeX2e{} this is accomplished by putting
+The first immediate issue with the baseline phrase table was that references and urls generated a large amount of noise in the correction data. Since we used the wordpunct NLTK tokenization scheme, urls in particular were inconsistently treated as multiple words, creating noisy alignments as well. Thus, the first cleaning step was to eliminate references completely, re-adding them after the correction. We accomplished this with a simple reegex substitution. 
 
-\begin{quote}
-\begin{verbatim}
-\usepackage{times}
-\usepackage{latexsym}
-\end{verbatim}
-\end{quote}
-in the preamble.
+Additionally, to experiment on the domain sensitivity of our system, we split the corpus by essay topic. This was particularly necessary because one of the challenges of the shared task was to submit system output for topics both inside and outside the training data. However, since the topics were not available a priori, we used an online version of the Latent Dirichlet Allocation (LDA) algorithm to generate a topic model, and then a K-Means clustering implementation to split the documents by those topics. We were then able to generate a held out dataset with 21572 training sentences (no references) with all but one topic, and 8695 test sentences (no references) with the remaining topic. This experiment showed that the NUCLE essay topics were largely similar in content, and that domain sensitivity is still a concern that ought to be tested by a heldout test set with a topic further removed from the training corpus.
 
-Additionally, it is of utmost importance to specify the {\bf
-  US-Letter format} (8.5in $\times$ 11in) when formatting the paper.
-When working with {\tt dvips}, for instance, one should specify {\tt
-  -t letter}.
+To experiment with the impact of zero-annotation sentences in the training corpus, we also generated datasets without correct sentences. This left a dataset of 11288 sentences, of which we used 10000 to train and 288 to tune. 
 
-Print-outs of the PDF file on US-Letter paper should be identical to the
-hardcopy version.  If you cannot meet the above requirements about the
-production of your electronic submission, please contact the
-publication chairs above  as soon as possible.
-
+To run stemming experiments, we used the stemmers bundled with NLTK. We stemmed and lemmatized the two corpora mentioned above with the Lancaster and Snowball stemmers and the WordNet lemmatizer to experiment with various degrees of stemming aggressiveness.
 
 \subsection{Layout}
 \label{ssec:layout}
