@@ -67,15 +67,91 @@ To experiment with the impact of zero-annotation sentences in the training corpu
 
 To run stemming experiments, we used the stemmers bundled with NLTK. We stemmed and lemmatized the two corpora mentioned above with the Lancaster and Snowball stemmers and the WordNet lemmatizer to experiment with various degrees of stemming aggressiveness.
 
-We used a Moses (SRILM) ngram language model trained on the test and dev datasets. Given the topic closeness between the test and train sets and the relatively small size of the test set, there was not a significant OOV problem, and experiments with big language models trained on the Brown Corpus did not yield any benefits to either of the scoring metrics. However, future work wil
+We used a Moses (SRILM) ngram language model trained on the test and dev datasets. Given the topic closeness between the test and train sets and the relatively small size of the test set, there was not a significant OOV problem, and experiments with big language models trained on the Brown Corpus did not yield any benefits to either of the scoring metrics. 
 
 Approach
+
+Sig Testing
+
+Stemming
+
+One of the issues with longer phrase choice, especially with verb and SVA errors, is that of sparsit. In general, these are context determined errors, so the ideal scenario would have a phrase table with a single source phrase translating to a target phrase, rather than multiple candidates that represent the different error type. 
+
+Take, for example, the phrase "The dog had walked." With a verb or SVA error, this can be formulated as "The dog had walks", "The dog had walk", "The dog had walking," etc. However, there is only one valid annotation. In this case, it makes sense to reduce the word to its base form on the source side, because there will then be 4 training examples rather than one per type. In this trivial example, this also intuitively makes decoding less ambiguous, as reduction to base forms 
+
+Though this could be achieved with segmentation as well (and that could be a different experiment), we decided that stemming was more likely to yield a consistent representation of this theory. We experimented with various levels of stemming aggressiveness (the WordNet lemmatizer on the low end, and the Lancaster stemmer on the high end), using our different training sets to measure the impact.
+
+NoCorrect
+
+The primary issue with the baseline system was the bias towards a correct \rightarrow correct translation in decoding. We tried to address this in various ways, but the naive way to do this was to train a system that dropped all sentences without annotations altogether, essentially forcing the SMT system to learn the annotation types with high probability. A variant of this system would experiment with various "factors" of correctness in the training data, where each 
+
+We ran two experiments on this. The first was to test the performance on this system on a test set that only had sentences with annotations. The second was to test it on the full test set that we used for the other experiments. The former was to establish the hypothesis that decoding performance was dependent on a linear relationship between the number of "errors" in the training sets and the test sets, and the latter was to stay consistent with the methodology of the other experiments. In practice, this method is infeasible - without another model to recognize correctness, there is no way to decode "only sentences with errors" in a blind test, or production setting.
 
 Results
 
 Observations
 
+Stemming
+
+The results from the stemming experiments were a mixed bag, and probably suffered from the fact that it was a broad-stroke approach when a finer brush might have been preferable. Take, for example, the following phrase table entries for the Lancaster experiment:
+
+\begin{framed}
+wait $\|\|$ to wait $\|\|$ 0.333333 1 0.047619 0.00710397 2.718 $\|\|$ 0-1 $\|\|$ 3 21 1 \\
+wait $\|\|$ wait $\|\|$ 1 1 0.428571 0.45 2.718 $\|\|$ 0-0 $\|\|$ 9 21 9 \\
+wait $\|\|$ waiting $\|\|$ 1 1 0.52381 0.55 2.718 $\|\|$ 0-0 $\|\|$ 11 21 11
+\end{framed}
+
+\begin{framed}
+' s fin $\|\|$ 's final $\|\|$ 1 0.25 0.0769231 0.15583 2.718 $\|\|$ 0-0 1-0 2-1 $\|\|$ 1 13 1 \\
+' s fin $\|\|$ 's finances $\|\|$ 1 0.25 0.384615 0.0249327 2.718 $\|\|$ 0-0 1-0 2-1 $\|\|$ 5 13 5 \\
+' s fin $\|\|$ 's financial $\|\|$ 1 0.25 0.538462
+\end{framed}
+
+These two phrase table entries are indicative of a few characteristic trends of the stemming experiments:
+\begin{enumerate}
+	\item The stemming had the intended effect on the verb entries in the phrase table, appropriately recognizing different verb forms with roughly equal probability. The first example shows the rather interesting characteristic that the verb "wait" is rarely corrected to the infinitive form, which, without stemming, would not have been found, as there would have been a single entry with "to wait" $\rightarrow$ "to wait" unless there was a specific annotation that added the infinitive.
+
+ 	\item The stemming had the opposite effect on nouns and adjectives, introducing ambiguity where there was previously none. In the second example, stemming to "fin" meant that there were three candidates for a single base form, where only one was really valid in the context of another sentence. 
+
+	\item An additional insight was that tokenized punctuation can either be helpful or specifically unhelpful in the context of error correction. In the second example, the \{' s\} serves as potentially useful disambiguation - the following word can only be a noun, adjective, or adverb, since it is a possessive particle. However, parentheses, ellipses, and commas are unhelpful phrase boundaries, and should probably have been dropped altogether. Though we did not consider the punctuation error type for the initial tests, we anticipate that this would have been problematic had we done so.
+
+end{enumerate}
+
+Some of the additional noise introduced with stemming was fixed by being less aggressive (specifically the noise characteristic of the latter example), and in our tests, the WordNet lemmatizer performed best. In future tests (see sec. 10), we want to isolate error types in decoding sets to solidify the claim that stemming specifically increases recall and precision on Verb form and SVA errors, and does not help in the other cases - the alternative is that stemming merely introduces ambiguity in the same way downsampling does, and so it achieved slight gains just due to overcorrection.
+
+Sig Testing
+
+NoCorrect
+
+Though not included in the above table, the test of our NoCorrect system only decoding sentences with errors had the most encouraging results, as shown below:
+
+\begin{framed}
+NoCorrect
+BLEU = 88.26, 95.8/90.8/86.0/81.6
+$M^2$ Precision: 0.4697
+$M^2$ Recall   : 0.1951
+$M^2$ F1       : 0.2757
+\end{framed}
+
+What this tells us is that at least for these 5 error forms, training a system on just errors is the best approach - it intuitively overcorrects in the same way that stemming or downsampling does artificially. The challenge then becomes twofold:
+\begin{enumerate}
+	\item Increase the size of the training set significantly - after dropping incorrect sentences and noise, the training set was only 10000 sentences.
+	\item Drop sentences that are probably correct before decoding -- as the results show, the performance significantly drops with the full training set.
+\end{enumerate}
+
 Future Work
+
+The results of this project were disappointing but not disheartening, and rather than concrete conlusions, we drew several insights that may lead to further research. These approaches fall into a few categories.
+
+\subsection{Pre-Editing}
+
+\subsection{Corpus Augmentation}
+
+\subsection{Tuning Modifications}
+
+\subsection{Iterative Decoding}
+
+\subsection{Learning Rules from Phrase Tables}
 
 References
 
